@@ -3,6 +3,7 @@ from google.cloud import firestore
 import asyncio
 from get_page_dynamic import get_page_dynamic
 import os
+from merge_json import merge_json
 from page_parser import get_page
 
 client = firestore.Client()
@@ -25,65 +26,33 @@ def run_machina(data, context):
 
     print('Function triggered by change to: %s' % trigger_resource)
 
-    first_row=get_oldest_document(client.collection('execRow'))
+    print('\nOld value:')
+    print(json.dumps(data["oldValue"]))
 
-    print(f'first_row: {first_row}')
-
-    first_row
-
-    document_url = data["value"]["fields"]["input"]["stringValue"]
-
-
+    print('\nNew value:')
+    print(json.dumps(data["value"]))
 
     path_parts = context.resource.split('/documents/')[1].split('/')
-    parent_collection_path = '/'.join(path_parts[:-1])
-    parent_document_path = '/'.join(path_parts[:-2])
-    
     collection_path = path_parts[0]
     document_path = '/'.join(path_parts[1:])
     affected_doc = client.collection(collection_path).document(document_path)
+    # type = data["value"]["fields"]["type"]["stringValue"]
 
-    print(f'parent_document_path: {parent_document_path}')
-    parent_doc = client.document(parent_document_path)
-
-    print(f'parent_doc: {parent_doc}')
-    parent_doc_data = parent_doc.get().to_dict()
-
-    print(f'parent_doc_data: {parent_doc_data}')
-
-    python_code=parent_doc_data['code']
-
-    # # Condition to check if the url is from dynamic webpage
-    if (parent_doc_data['type']=='code'):
-      exec(python_code)
-    elif (parent_doc_data['type']=='fetch'):
-      if(parent_doc_data['fetch_type']=='dynamic'):
-        pageText = asyncio.run(get_page_dynamic(parent_doc_data['url']))
-        affected_doc.update({
-          u'response': pageText
-        })
-      # For static webpage
-      else:
-        pageText = get_page(parent_doc_data['url'])
-        affected_doc.update({
-          u'response': pageText
-        })
-    elif (parent_doc_data['type']=='gpt'):      
-      import openai
-      openai.api_key = 'sk-somekeygoeshere' 
-      # We can keep temperature=0 to remove radomness
-      response = openai.Completion.create(
-        model="text-davinci-003",
-        prompt = parent_doc_data['prompt'],
-        temperature=parent_doc_data['temp'],
-        max_tokens=parent_doc_data['tokens'], #700
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0
-      )
-      print(f'openai response: {response}')
-      affected_doc.update({
-        u'response': response
-      })
+    get_docs_with_empty_input=client.collection(u'cell').where(u'input', u'==', None).get()
+    for doc in get_docs_with_empty_input:
+        create_run(doc)
 
 
+
+
+
+# def get_docs_with_empty_input(col_ref):
+#     docs = col_ref.where(u'input', u'==', u'').get()
+#     return docs
+
+def create_run(doc_ref):
+    print('creating run')
+    print(doc_ref.id)
+    run_ref = client.collection(u'run').document()
+    run_ref.set(merge_json(doc_ref.to_dict(), { u'timeCreated': firestore.SERVER_TIMESTAMP }))
+    print('created run')

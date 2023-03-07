@@ -14,7 +14,7 @@ def get_env_var(request):
   return os.environ.get(request, 'Specified environment variable is not set.')
 
 def run_cell_exec(data, context):
-    """ Triggered by a change to a Firestore document.
+    """ Triggered by a creation of a Firestore document!
     Args:
         data (dict): The event payload.
         context (google.cloud.functions.Context): Metadata for the event.
@@ -46,6 +46,8 @@ def run_cell_exec(data, context):
       except Exception as e:        
         error_message = str(e)      
         affected_doc.update({
+        u'timeCompleted': firestore.SERVER_TIMESTAMP,
+        u'status': 'completed',
           u'output': 'Error: ' + error_message
         })
       print('done executing code')
@@ -61,6 +63,8 @@ def run_cell_exec(data, context):
       except Exception as e:        
         error_message = str(e)      
         affected_doc.update({
+        u'timeCompleted': firestore.SERVER_TIMESTAMP,
+        u'status': 'completed',
           u'output': 'Error: ' + error_message
         })
       print('done evaluating code')
@@ -81,6 +85,8 @@ def run_cell_exec(data, context):
           generated_code = generated_code[1:].lstrip('\n')
       generated_code = generated_code.replace('+', '')
       affected_doc.update({
+        u'timeCompleted': firestore.SERVER_TIMESTAMP,
+        u'status': 'completed',
         u'output': generated_code #response.choices[0].text
       })
     elif(type=='get_page'):
@@ -90,6 +96,8 @@ def run_cell_exec(data, context):
       print('done getting page')
       print(page)
       affected_doc.update({
+        u'timeCompleted': firestore.SERVER_TIMESTAMP,
+        u'status': 'completed',
         u'output': page
       })
 
