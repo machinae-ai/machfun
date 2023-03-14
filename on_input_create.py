@@ -1,43 +1,48 @@
 import json
 from google.cloud import firestore
-import asyncio
 import os
+
+from inputs import start_runs_for_input
 
 openai_key = os.environ.get('OPENAI_KEY')
 
 
-client = firestore.Client()
+db = firestore.Client()
 
 def get_env_var(request):
   return os.environ.get(request, 'Specified environment variable is not set.')
 
-def on_cell_run_update(data, context):
-    """ Triggered on a change to a cell run document at project/{id}/cell/{cellId}/run/{runId}
+def on_input_create(data, context):
+    """ Triggered on creation of input document at project/{id}/run/{runId}/input/{id}
     Args:
         data (dict): The event payload.
         context (google.cloud.functions.Context): Metadata for the event.
     """
-    # trigger_resource = context.resource
+    input_doc_id = context.resource.split("/")[-1]
+        
+    print(input_doc_id)
 
-    # print('Function triggered by change to: %s' % trigger_resource)
-
-    # print('\nOld value:')
-    # print(json.dumps(data["oldValue"]))
-
-    # print('\nNew value:')
-    # print(json.dumps(data["value"]))
-
-    # if(data["oldValue"] is None):
-    #   return
-
-    # if(data["value"] is None):
-    #   return
+    # Use the path to get a reference to the affected document
+    doc_ref = db.document(context.resource)
     
-    # if(data["value"]["fields"]["status"] is None):
-    #   return
+    # data_dic=data["value"].to_dict()
+    
+    # print(u'input created: {doc_ref.id}, {data_dic}')
+    # data["value"]["fields"]["id"]["stringValue"]
+    
+    start_runs_for_input(doc_ref.parent.parent, input_doc_id)
 
-    # if(data["oldValue"]["fields"]["status"] is None):
-    #   return
+    # transaction = db.transaction()
+    # city_ref = db.collection(u'cities').document(u'SF')
+
+    # @firestore.transactional
+    # def update_in_transaction(transaction, city_ref):
+    #     snapshot = city_ref.get(transaction=transaction)
+    #     transaction.update(city_ref, {
+    #         u'population': snapshot.get(u'population') + 1
+    #     })
+
+    # update_in_transaction(transaction, city_ref)
 
     # if(
     #   data["oldValue"]["fields"]["status"]["stringValue"] != "completed" and

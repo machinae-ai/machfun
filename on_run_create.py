@@ -20,7 +20,7 @@ def get_oldest_document(collection):
     for doc in docs:
         return doc
 
-def run_machina(data, context):
+def on_run_create(data, context):
     """ Triggered by a change to a Firestore document.
     Args:
         data (dict): The event payload.
@@ -41,23 +41,48 @@ def run_machina(data, context):
     document_path = '/'.join(path_parts[1:])
     master_run_doc = client.collection(collection_path).document(document_path)
     # FIXIT: make the path relative to the affected document path
-    cell_col = client.collection('project/1/cell')
+    # cell_col = client.collection('project/1/cell')
     # type = data["value"]["fields"]["type"]["stringValue"]
 
     # get_docs_with_empty_input=client.collection(u'cell').where(u'input', u'==', None).get()    
-    print(f'cell path: {cell_col}')
+    # print(f'cell path: {cell_col}')
     # FIXIT: make 'none' work with null/empty document field instead of string 'none'
-    cell_docs_with_empty_input=cell_col.where(u'input', u'==', None).get()
-    print(f'found {cell_docs_with_empty_input} docs with empty input')
-    for doc in cell_docs_with_empty_input:
-        create_run(master_run_doc, doc)
-
-def create_run(master_run_doc, cell_doc):
-    print(f'creating run for {cell_doc.id}, {cell_doc.to_dict()}')    
-    run_ref = master_run_doc.collection('cell_run').document(cell_doc.id)
-    run_ref.set(cell_doc.to_dict())
-    run_ref.update({
+    
+    # cell_col_query_ref=cell_col.where(u'inputs', u'array_contains', 'init')
+    # init_cells_col=cell_col_query_ref.get()
+    
+    master_run_doc.collection('input').document('init').set({
+      u'type': 'init',
       u'timeCreated': firestore.SERVER_TIMESTAMP,
-      u'status': 'running',
-    })    
-    print('created run %s' % run_ref.id)
+    })
+
+#     print(f'found {init_cells_col} docs with init input')
+#     for doc in init_cells_col:
+#         print(f'{doc.id} => {doc.to_dict()}')
+#         create_run(master_run_doc, doc)
+
+# def create_run(master_run_doc, cell_doc):
+#     print(f'creating input for {cell_doc.id}, {cell_doc.to_dict()}')    
+#     run_ref = master_run_doc.collection('input').document(cell_doc.id)
+#     run_ref.set(cell_doc.to_dict())
+#     run_ref.update({
+#       u'timeCreated': firestore.SERVER_TIMESTAMP,
+#       u'status': 'running',
+#     })    
+#     print('created run %s' % run_ref.id)
+
+
+    # cell_docs_with_empty_input=cell_col.where(u'input', u'==', None).get()
+    # print(f'found {cell_docs_with_empty_input} docs with empty input')
+    # for doc in cell_docs_with_empty_input:
+    #     create_run(master_run_doc, doc)
+
+# def create_run(master_run_doc, cell_doc):
+#     print(f'creating run for {cell_doc.id}, {cell_doc.to_dict()}')    
+#     run_ref = master_run_doc.collection('cell_run').document(cell_doc.id)
+#     run_ref.set(cell_doc.to_dict())
+#     run_ref.update({
+#       u'timeCreated': firestore.SERVER_TIMESTAMP,
+#       u'status': 'running',
+#     })    
+#     print('created run %s' % run_ref.id)

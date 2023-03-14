@@ -26,7 +26,7 @@ async def get_page_dynamic(givenUrl):
     url = givenUrl
       
     await page.goto(url)
-    pageTitle = await page.title()
+    # pageTitle = await page.title()
 
     pTags = await page.querySelectorAll('p, h1, h2, h3, h4, h5, h6, ul, li, a')
     descriptionText = [await page.evaluate('(element) => element.innerText', p) for p in pTags]
